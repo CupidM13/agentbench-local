@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "agentbench-local"
+version = "0.1.0"
+description = "A reliability benchmark and hardening layer for tool-calling agents running on small local LLMs"
+authors = [
+    {name = "AgentBench-Local ML Engineer", email = "agentbench@local.ai"}
+]
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "openai>=1.40.0",
+    "pydantic>=2.8.0",
+    "pyyaml>=6.0.0",
+    "pandas>=2.2.0",
+    "matplotlib>=3.9.0",
+    "pytest>=8.0.0",
+    "tqdm>=4.66.0",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
