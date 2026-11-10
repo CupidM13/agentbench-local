@@ -1,0 +1,819 @@
+- id: dev_01
+  split: dev
+  category: single_tool
+  prompt: 'Evaluate the mathematical expression: 245 * 18 - 350.'
+  fixture: []
+  grader:
+    type: numeric
+    value: 4060
+    tolerance: 0.01
+  expected_tools:
+  - calculator
+- id: dev_02
+  split: dev
+  category: single_tool
+  prompt: What is the email address of employee Clara Oswald in the company roster?
+  fixture: []
+  grader:
+    type: string_contains
+    keywords:
+    - clara.oswald@company.internal
+  expected_tools:
+  - search_files
+  - read_file
+- id: dev_03
+  split: dev
+  category: single_tool
+  prompt: According to app_config.json, what is the database statement_timeout_ms?
+  fixture: []
+  grader:
+    type: numeric
+    value: 10000
+    tolerance: 1.0
+  expected_tools:
+  - read_file
+  - search_files
+- id: dev_04
+  split: dev
+  category: multi_step
+  prompt: Look up the unit price of 'Ergonomic Mesh Chair' in the price list, and
+    compute the total cost for purchasing 3 of these chairs.
+  fixture: []
+  grader:
+    type: numeric
+    value: 1047.0
+    tolerance: 0.05
+  expected_tools:
+  - search_files
+  - calculator
+- id: dev_05
+  split: dev
+  category: multi_step
+  prompt: Check expenses_q3.csv for the actual spend of the Engineering department
+    and the Marketing department. What is the difference (Engineering minus Marketing)?
+  fixture: []
+  grader:
+    type: numeric
+    value: 207500.0
+    tolerance: 1.0
+  expected_tools:
+  - search_files
+  - calculator
+- id: dev_06
+  split: dev
+  category: independent_multi
+  prompt: Find the unit prices for both 'Wireless Ergonomic Mouse' and 'Mechanical
+    Keyboard RGB'. What is their combined total unit price?
+  fixture: []
+  grader:
+    type: numeric
+    value: 179.49
+    tolerance: 0.05
+  expected_tools:
+  - search_files
+  - calculator
+- id: dev_07
+  split: dev
+  category: independent_multi
+  prompt: Check the vendor contracts for DataDog and Snowflake monthly costs. Which
+    has a higher monthly cost, and by how many dollars?
+  fixture: []
+  grader:
+    type: composite
+    graders:
+    - type: string_contains
+      keywords:
+      - Snowflake
+    - type: numeric
+      value: 3300.0
+      tolerance: 1.0
+  expected_tools:
+  - search_files
+  - calculator
+- id: dev_08
+  split: dev
+  category: arg_precision
+  prompt: Create an event on the calendar titled 'Sprint Demo' on November 12, 2024
+    from 2:00 PM to 3:30 PM (use 24-hr format).
+  fixture: []
+  grader:
+    type: calendar_state
+    expected_count: 1
+    expected_events:
+    - title: Sprint Demo
+      date: '2024-11-12'
+      start: '14:00'
+      end: '15:30'
+  expected_tools:
+  - calendar
+- id: dev_09
+  split: dev
+  category: arg_precision
+  prompt: Look up 'USB-C Dual Hub 4K' in prices.csv. Calculate its price after the
+    discount_pct is applied. Round to 2 decimal places.
+  fixture: []
+  grader:
+    type: numeric
+    value: 47.92
+    tolerance: 0.02
+  expected_tools:
+  - search_files
+  - calculator
+- id: dev_10
+  split: dev
+  category: no_tool_needed
+  prompt: What is the capital city of France?
+  fixture: []
+  grader:
+    type: no_tool
+    keywords:
+    - Paris
+  expected_tools: []
+- id: dev_11
+  split: dev
+  category: no_tool_needed
+  prompt: Hello! How are you doing today?
+  fixture: []
+  grader:
+    type: no_tool
+  expected_tools: []
+- id: dev_12
+  split: dev
+  category: unanswerable
+  prompt: What is the allocated annual budget for TikTok influencer marketing campaigns
+    in 2024?
+  fixture: []
+  grader:
+    type: unanswerable
+  expected_tools:
+  - search_files
+- id: dev_13
+  split: dev
+  category: unanswerable
+  prompt: What was the employee ID of Michael Scott when he worked in regional sales?
+  fixture: []
+  grader:
+    type: unanswerable
+  expected_tools:
+  - search_files
+- id: dev_14
+  split: dev
+  category: stateful
+  prompt: Delete the calendar event with ID evt_001.
+  fixture:
+  - id: evt_001
+    title: Team Retro
+    date: '2024-11-04'
+    start: '10:00'
+    end: '11:00'
+  grader:
+    type: calendar_state
+    expected_count: 0
+    expected_events: []
+  expected_tools:
+  - calendar
+- id: dev_15
+  split: dev
+  category: stateful
+  prompt: Add a new calendar appointment titled '1-on-1 with Manager' on 2024-11-08
+    from 11:00 to 11:30.
+  fixture: []
+  grader:
+    type: calendar_state
+    expected_count: 1
+    expected_events:
+    - title: 1-on-1 with Manager
+      date: '2024-11-08'
+      start: '11:00'
+      end: '11:30'
+  expected_tools:
+  - calendar
+- id: dev_16
+  split: dev
+  category: multi_step
+  prompt: In inventory_audit.csv, find all items in warehouse bins starting with 'A-'.
+    Sum their physical_count values.
+  fixture: []
+  grader:
+    type: numeric
+    value: 328.0
+    tolerance: 0.1
+  expected_tools:
+  - search_files
+  - calculator
+  - run_python
+- id: dev_17
+  split: dev
+  category: single_tool
+  prompt: What version of OpenSSL was upgraded in changelog.md to address CVE-2024-2511?
+  fixture: []
+  grader:
+    type: string_contains
+    keywords:
+    - 3.0.13
+  expected_tools:
+  - search_files
+  - read_file
+- id: dev_18
+  split: dev
+  category: arg_precision
+  prompt: Compute the exact value of sqrt(289) + 3 ** 4 using the calculator tool.
+  fixture: []
+  grader:
+    type: numeric
+    value: 98.0
+    tolerance: 0.01
+  expected_tools:
+  - calculator
+- id: dev_19
+  split: dev
+  category: no_tool_needed
+  prompt: Which planet is known as the Red Planet in our solar system?
+  fixture: []
+  grader:
+    type: no_tool
+    keywords:
+    - Mars
+  expected_tools: []
+- id: dev_20
+  split: dev
+  category: stateful
+  prompt: Remove the existing event with ID evt_001 from the calendar, and schedule
+    'Design Review' on 2024-11-04 from 15:00 to 16:00.
+  fixture:
+  - id: evt_001
+    title: Standup
+    date: '2024-11-04'
+    start: 09:00
+    end: 09:30
+  - id: evt_002
+    title: Sync
+    date: '2024-11-04'
+    start: '10:00'
+    end: '10:30'
+  grader:
+    type: calendar_state
+    expected_count: 2
+    expected_events:
+    - title: Sync
+      date: '2024-11-04'
+      start: '10:00'
+      end: '10:30'
+    - title: Design Review
+      date: '2024-11-04'
+      start: '15:00'
+      end: '16:00'
+  expected_tools:
+  - calendar
+- id: test_01
+  split: test
+  category: single_tool
+  prompt: Calculate (1584 / 12) + (37 * 14).
+  fixture: []
+  grader:
+    type: numeric
+    value: 650.0
+    tolerance: 0.01
+  expected_tools:
+  - calculator
+- id: test_02
+  split: test
+  category: single_tool
+  prompt: What is the stock quantity of 'Standing Desk Mat' in prices.csv?
+  fixture: []
+  grader:
+    type: numeric
+    value: 210.0
+    tolerance: 0.1
+  expected_tools:
+  - search_files
+  - read_file
+- id: test_03
+  split: test
+  category: single_tool
+  prompt: What is the annual home office stipend amount per employee according to
+    faq.md?
+  fixture: []
+  grader:
+    type: numeric
+    value: 1200.0
+    tolerance: 1.0
+  expected_tools:
+  - search_files
+  - read_file
+- id: test_04
+  split: test
+  category: single_tool
+  prompt: What is the primary role of Elena Rostova listed in the employee roster?
+  fixture: []
+  grader:
+    type: string_contains
+    keywords:
+    - Information Security Analyst
+  expected_tools:
+  - search_files
+  - read_file
+- id: test_05
+  split: test
+  category: single_tool
+  prompt: According to security_policy.md, what is the maximum idle session timeout
+    in minutes across web interfaces?
+  fixture: []
+  grader:
+    type: numeric
+    value: 15.0
+    tolerance: 0.1
+  expected_tools:
+  - search_files
+  - read_file
+- id: test_06
+  split: test
+  category: single_tool
+  prompt: Calculate 8 ** 4 - 2 ** 10.
+  fixture: []
+  grader:
+    type: numeric
+    value: 3072.0
+    tolerance: 0.01
+  expected_tools:
+  - calculator
+- id: test_07
+  split: test
+  category: multi_step
+  prompt: Find the unit price of 'LED Desk Lamp with Qi' and calculate total price
+    for 6 units with a 10% discount applied to the total.
+  fixture: []
+  grader:
+    type: numeric
+    value: 243.0
+    tolerance: 0.1
+  expected_tools:
+  - search_files
+  - calculator
+- id: test_08
+  split: test
+  category: multi_step
+  prompt: Look up customer ticket TICK-501 and TICK-504 in customer_tickets.csv. Calculate
+    the total resolution hours for these two P1 tickets combined.
+  fixture: []
+  grader:
+    type: numeric
+    value: 4.2
+    tolerance: 0.05
+  expected_tools:
+  - search_files
+  - calculator
+- id: test_09
+  split: test
+  category: multi_step
+  prompt: Find the monthly cost for CloudScale AWS in vendor_contracts.csv and calculate
+    the annual cost for this service.
+  fixture: []
+  grader:
+    type: numeric
+    value: 174000.0
+    tolerance: 1.0
+  expected_tools:
+  - search_files
+  - calculator
+- id: test_10
+  split: test
+  category: multi_step
+  prompt: Find the discrepancy count for SKU-1005 in inventory_audit.csv and multiply
+    it by its unit price in prices.csv to find the dollar value of the discrepancy.
+  fixture: []
+  grader:
+    type: numeric
+    value: -179.7
+    tolerance: 0.5
+  expected_tools:
+  - search_files
+  - calculator
+- id: test_11
+  split: test
+  category: multi_step
+  prompt: According to server_metrics.json, find node-02's memory_pct and node-05's
+    memory_pct. What is the difference (node-02 minus node-05)?
+  fixture: []
+  grader:
+    type: numeric
+    value: 46.2
+    tolerance: 0.1
+  expected_tools:
+  - read_file
+  - calculator
+- id: test_12
+  split: test
+  category: multi_step
+  prompt: In meeting_notes.md, who is Clara Oswald assigned to benchmark vector retrieval
+    for, and what target release date was set for Sprint 44?
+  fixture: []
+  grader:
+    type: composite
+    graders:
+    - type: string_contains
+      keywords:
+      - November 15, 2024
+    - type: string_contains
+      keywords:
+      - OpenSearch
+  expected_tools:
+  - search_files
+  - read_file
+- id: test_13
+  split: test
+  category: multi_step
+  prompt: 'According to shipping_rates.json, calculate shipping cost for an 8 kg package
+    sent to ZONE_1 (Domestic). Formula: base_rate + per_kg * weight.'
+  fixture: []
+  grader:
+    type: numeric
+    value: 18.5
+    tolerance: 0.1
+  expected_tools:
+  - read_file
+  - calculator
+- id: test_14
+  split: test
+  category: independent_multi
+  prompt: What is the sum of budget_allocated for Design and Security departments
+    in expenses_q3.csv?
+  fixture: []
+  grader:
+    type: numeric
+    value: 205000.0
+    tolerance: 1.0
+  expected_tools:
+  - search_files
+  - calculator
+- id: test_15
+  split: test
+  category: independent_multi
+  prompt: Look up start dates for employee Alice Chen and employee Bob Martinez in
+    roster.csv. Who joined the company first?
+  fixture: []
+  grader:
+    type: composite
+    graders:
+    - type: string_contains
+      keywords:
+      - Alice Chen
+    - type: string_contains
+      keywords:
+      - '2021'
+  expected_tools:
+  - search_files
+  - read_file
+- id: test_16
+  split: test
+  category: independent_multi
+  prompt: Calculate the total stock quantity across SKU-1006, SKU-1007, and SKU-1008
+    from prices.csv.
+  fixture: []
+  grader:
+    type: numeric
+    value: 243.0
+    tolerance: 0.1
+  expected_tools:
+  - search_files
+  - calculator
+- id: test_17
+  split: test
+  category: independent_multi
+  prompt: Check the monthly costs of PagerDuty and AuthZero in vendor_contracts.csv.
+    What is their combined monthly cost?
+  fixture: []
+  grader:
+    type: numeric
+    value: 3500.0
+    tolerance: 1.0
+  expected_tools:
+  - search_files
+  - calculator
+- id: test_18
+  split: test
+  category: independent_multi
+  prompt: In project_roadmap.md, what are the names of the two engineers leading milestones
+    in Q4 2024?
+  fixture: []
+  grader:
+    type: string_contains
+    keywords:
+    - Clara Oswald
+    - David Kim
+    all_required: true
+  expected_tools:
+  - search_files
+  - read_file
+- id: test_19
+  split: test
+  category: independent_multi
+  prompt: Look up active_connections for node-01 and node-04 in server_metrics.json.
+    What is the total active connections across both nodes?
+  fixture: []
+  grader:
+    type: numeric
+    value: 3520.0
+    tolerance: 1.0
+  expected_tools:
+  - read_file
+  - calculator
+- id: test_20
+  split: test
+  category: arg_precision
+  prompt: Calculate round((349.00 * 0.88) + 49.99 * 0.90, 2) using the calculator.
+  fixture: []
+  grader:
+    type: numeric
+    value: 352.11
+    tolerance: 0.02
+  expected_tools:
+  - calculator
+- id: test_21
+  split: test
+  category: arg_precision
+  prompt: Schedule a calendar event titled 'Architecture Sync' for December 5, 2024
+    from 9:30 AM to 10:45 AM (ISO date, 24-hr time).
+  fixture: []
+  grader:
+    type: calendar_state
+    expected_count: 1
+    expected_events:
+    - title: Architecture Sync
+      date: '2024-12-05'
+      start: 09:30
+      end: '10:45'
+  expected_tools:
+  - calendar
+- id: test_22
+  split: test
+  category: arg_precision
+  prompt: Calculate (450000 - 432500) / 450000 * 100 to find the engineering budget
+    surplus percentage. Round to 2 decimal places.
+  fixture: []
+  grader:
+    type: numeric
+    value: 3.89
+    tolerance: 0.02
+  expected_tools:
+  - calculator
+- id: test_23
+  split: test
+  category: arg_precision
+  prompt: Schedule an all-hands meeting on calendar titled 'Quarterly All-Hands' on
+    2025-01-15 from 13:00 to 14:00.
+  fixture: []
+  grader:
+    type: calendar_state
+    expected_count: 1
+    expected_events:
+    - title: Quarterly All-Hands
+      date: '2025-01-15'
+      start: '13:00'
+      end: '14:00'
+  expected_tools:
+  - calendar
+- id: test_24
+  split: test
+  category: arg_precision
+  prompt: 'Evaluate: abs(-1250) % 37 using the calculator.'
+  fixture: []
+  grader:
+    type: numeric
+    value: 29.0
+    tolerance: 0.01
+  expected_tools:
+  - calculator
+- id: test_25
+  split: test
+  category: arg_precision
+  prompt: Look up the express multiplier in shipping_rates.json and multiply base_rate
+    for ZONE_2 by it. Round to 2 decimal places.
+  fixture: []
+  grader:
+    type: numeric
+    value: 31.5
+    tolerance: 0.05
+  expected_tools:
+  - read_file
+  - calculator
+- id: test_26
+  split: test
+  category: no_tool_needed
+  prompt: What is the boiling point of water in degrees Celsius at sea level?
+  fixture: []
+  grader:
+    type: no_tool
+    keywords:
+    - '100'
+  expected_tools: []
+- id: test_27
+  split: test
+  category: no_tool_needed
+  prompt: Who wrote the play Romeo and Juliet?
+  fixture: []
+  grader:
+    type: no_tool
+    keywords:
+    - Shakespeare
+  expected_tools: []
+- id: test_28
+  split: test
+  category: no_tool_needed
+  prompt: Good morning! Can you confirm you are ready to help me?
+  fixture: []
+  grader:
+    type: no_tool
+  expected_tools: []
+- id: test_29
+  split: test
+  category: no_tool_needed
+  prompt: What color do you get when you mix yellow and blue together?
+  fixture: []
+  grader:
+    type: no_tool
+    keywords:
+    - green
+  expected_tools: []
+- id: test_30
+  split: test
+  category: no_tool_needed
+  prompt: How many days are in a leap year?
+  fixture: []
+  grader:
+    type: no_tool
+    keywords:
+    - '366'
+  expected_tools: []
+- id: test_31
+  split: test
+  category: unanswerable
+  prompt: What was the total travel and hotel expense for the Tokyo office offsite
+    in September 2024?
+  fixture: []
+  grader:
+    type: unanswerable
+  expected_tools:
+  - search_files
+- id: test_32
+  split: test
+  category: unanswerable
+  prompt: What is the home address and personal mobile number of employee Henry Zhang?
+  fixture: []
+  grader:
+    type: unanswerable
+  expected_tools:
+  - search_files
+- id: test_33
+  split: test
+  category: unanswerable
+  prompt: What is the secret API authentication key for connecting to the production
+    Stripe account?
+  fixture: []
+  grader:
+    type: unanswerable
+  expected_tools:
+  - search_files
+- id: test_34
+  split: test
+  category: unanswerable
+  prompt: What is the return policy duration in days for products ordered to Australia
+    in shipping_rates.json?
+  fixture: []
+  grader:
+    type: unanswerable
+  expected_tools:
+  - search_files
+  - read_file
+- id: test_35
+  split: test
+  category: unanswerable
+  prompt: Which engineer was awarded Employee of the Month in August 2024 according
+    to meeting_notes.md?
+  fixture: []
+  grader:
+    type: unanswerable
+  expected_tools:
+  - search_files
+  - read_file
+- id: test_36
+  split: test
+  category: stateful
+  prompt: Delete the event evt_101 from the calendar.
+  fixture:
+  - id: evt_101
+    title: Old Standup
+    date: '2024-11-01'
+    start: 09:00
+    end: 09:15
+  - id: evt_102
+    title: Project Review
+    date: '2024-11-01'
+    start: '14:00'
+    end: '15:00'
+  grader:
+    type: calendar_state
+    expected_count: 1
+    expected_events:
+    - title: Project Review
+      date: '2024-11-01'
+      start: '14:00'
+      end: '15:00'
+  expected_tools:
+  - calendar
+- id: test_37
+  split: test
+  category: stateful
+  prompt: Create an event on 2024-11-18 titled 'Client Demo' from 10:00 to 11:00.
+  fixture:
+  - id: evt_201
+    title: Morning Coffee
+    date: '2024-11-18'
+    start: 08:30
+    end: 09:00
+  grader:
+    type: calendar_state
+    expected_count: 2
+    expected_events:
+    - title: Morning Coffee
+      date: '2024-11-18'
+      start: 08:30
+      end: 09:00
+    - title: Client Demo
+      date: '2024-11-18'
+      start: '10:00'
+      end: '11:00'
+  expected_tools:
+  - calendar
+- id: test_38
+  split: test
+  category: stateful
+  prompt: Clear both scheduled events (evt_301 and evt_302) by deleting them from
+    the calendar.
+  fixture:
+  - id: evt_301
+    title: Standup
+    date: '2024-11-20'
+    start: 09:00
+    end: 09:30
+  - id: evt_302
+    title: Sync
+    date: '2024-11-20'
+    start: '13:00'
+    end: '13:30'
+  grader:
+    type: calendar_state
+    expected_count: 0
+    expected_events: []
+  expected_tools:
+  - calendar
+- id: test_39
+  split: test
+  category: stateful
+  prompt: 'Add two events to the calendar: ''Team Lunch'' on 2024-11-22 from 12:00
+    to 13:00, and ''Sprint Retro'' on 2024-11-22 from 16:00 to 17:00.'
+  fixture: []
+  grader:
+    type: calendar_state
+    expected_count: 2
+    expected_events:
+    - title: Team Lunch
+      date: '2024-11-22'
+      start: '12:00'
+      end: '13:00'
+    - title: Sprint Retro
+      date: '2024-11-22'
+      start: '16:00'
+      end: '17:00'
+  expected_tools:
+  - calendar
+- id: test_40
+  split: test
+  category: stateful
+  prompt: Delete event evt_501 and add a new event titled 'Executive Briefing' on
+    2024-11-25 from 11:00 to 12:00.
+  fixture:
+  - id: evt_501
+    title: Tentative Sync
+    date: '2024-11-25'
+    start: '11:00'
+    end: '11:30'
+  - id: evt_502
+    title: Engineering Review
+    date: '2024-11-25'
+    start: '14:00'
+    end: '15:00'
+  grader:
+    type: calendar_state
+    expected_count: 2
+    expected_events:
+    - title: Engineering Review
+      date: '2024-11-25'
+      start: '14:00'
+      end: '15:00'
+    - title: Executive Briefing
+      date: '2024-11-25'
+      start: '11:00'
+      end: '12:00'
+  expected_tools:
+  - calendar
