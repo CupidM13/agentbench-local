@@ -1,0 +1,8 @@
+department,budget_allocated,actual_spend,variance,approved_by
+Engineering,450000,432500,17500,Grace Hopper
+Product,180000,192000,-12000,Bob Martinez
+Design,85000,78200,6800,David Kim
+Security,120000,114000,6000,Elena Rostova
+Marketing,210000,225000,-15000,Isabella Rossi
+Data,160000,153500,6500,Farhan Siddiqui
+Sales,250000,241000,9000,Henry Zhang

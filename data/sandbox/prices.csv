@@ -1,0 +1,11 @@
+sku,product_name,category,unit_price,stock_quantity,discount_pct
+SKU-1001,Wireless Ergonomic Mouse,Electronics,49.99,150,10
+SKU-1002,Mechanical Keyboard RGB,Electronics,129.50,85,15
+SKU-1003,Noise-Cancelling Headphones,Electronics,199.00,42,5
+SKU-1004,Standing Desk Mat,Office Supplies,39.95,210,0
+SKU-1005,USB-C Dual Hub 4K,Electronics,59.90,75,20
+SKU-1006,Ergonomic Mesh Chair,Furniture,349.00,18,0
+SKU-1007,LED Desk Lamp with Qi,Electronics,45.00,95,10
+SKU-1008,Aluminium Laptop Stand,Office Supplies,32.50,130,5
+SKU-1009,4K Ultra-Wide Monitor 34in,Electronics,549.99,22,12
+SKU-1010,Cable Management Box,Office Supplies,19.99,300,0

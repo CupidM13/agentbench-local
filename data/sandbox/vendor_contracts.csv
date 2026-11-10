@@ -1,0 +1,7 @@
+vendor_name,service_type,monthly_cost_usd,renewal_date,sla_guarantee,primary_contact
+CloudScale AWS,Cloud Infrastructure,14500,2025-06-30,99.99%,sarah@cloudscale.net
+DataDog,Observability & APM,3200,2025-02-28,99.9%,matt.apm@datadoghq.com
+PagerDuty,Incident Management,1100,2024-12-15,99.95%,support@pagerduty.com
+AuthZero,Identity Provider,2400,2025-04-30,99.99%,enterprise@auth0.com
+GitHub Enterprise,Source Control & CI,1850,2025-08-31,99.9%,sales@github.com
+Snowflake,Data Warehousing,6500,2025-01-31,99.9%,analytics@snowflake.com

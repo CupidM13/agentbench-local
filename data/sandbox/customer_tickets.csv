@@ -1,0 +1,9 @@
+ticket_id,priority,customer_tier,category,resolution_hours,status
+TICK-501,P1,Enterprise,API Authentication,2.4,Resolved
+TICK-502,P3,Standard,UI Dashboard,14.8,Resolved
+TICK-503,P2,Enterprise,Export Data Timeout,5.1,Resolved
+TICK-504,P1,Enterprise,Database Connection Drop,1.8,Resolved
+TICK-505,P4,Free,Feature Request,48.0,Closed
+TICK-506,P2,Standard,Billing Calculation,8.5,Resolved
+TICK-507,P3,Enterprise,Webhook Delivery,11.2,Resolved
+TICK-508,P1,Enterprise,SSO SAML Failure,3.0,Resolved

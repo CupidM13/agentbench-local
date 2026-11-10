@@ -1,0 +1,30 @@
+{
+  "zones": {
+    "ZONE_1": {
+      "region": "North America Domestic",
+      "base_rate": 8.5,
+      "per_kg": 1.25,
+      "sla_days": 3
+    },
+    "ZONE_2": {
+      "region": "Western Europe",
+      "base_rate": 18.0,
+      "per_kg": 3.5,
+      "sla_days": 5
+    },
+    "ZONE_3": {
+      "region": "Asia Pacific",
+      "base_rate": 24.5,
+      "per_kg": 4.75,
+      "sla_days": 7
+    },
+    "ZONE_4": {
+      "region": "Rest of World",
+      "base_rate": 35.0,
+      "per_kg": 6.0,
+      "sla_days": 10
+    }
+  },
+  "express_multiplier": 1.75,
+  "free_shipping_threshold_domestic": 75.0
+}

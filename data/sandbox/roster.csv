@@ -1,0 +1,11 @@
+emp_id,full_name,department,role,email,start_date
+EMP-01,Alice Chen,Engineering,Staff Infrastructure Engineer,alice.chen@company.internal,2021-03-15
+EMP-02,Bob Martinez,Product,Senior Product Manager,bob.martinez@company.internal,2022-06-01
+EMP-03,Clara Oswald,Engineering,Backend Software Engineer,clara.oswald@company.internal,2023-01-10
+EMP-04,David Kim,Design,Lead Product Designer,david.kim@company.internal,2020-11-20
+EMP-05,Elena Rostova,Security,Information Security Analyst,elena.rostova@company.internal,2022-09-15
+EMP-06,Farhan Siddiqui,Data,Data Science Lead,farhan.siddiqui@company.internal,2021-08-01
+EMP-07,Grace Hopper,Engineering,Principal Systems Architect,grace.hopper@company.internal,2019-05-01
+EMP-08,Henry Zhang,Sales,Account Executive,henry.zhang@company.internal,2023-04-18
+EMP-09,Isabella Rossi,Marketing,Content Marketing Manager,isabella.rossi@company.internal,2022-02-14
+EMP-10,Jamal Washington,Product,Associate Product Manager,jamal.washington@company.internal,2023-10-01

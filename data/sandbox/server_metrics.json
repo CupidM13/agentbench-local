@@ -1,0 +1,47 @@
+{
+  "cluster_name": "prod-us-east-1",
+  "timestamp": "2024-10-25T12:00:00Z",
+  "nodes": [
+    {
+      "node_id": "node-01",
+      "role": "api-gateway",
+      "cpu_pct": 42.5,
+      "memory_pct": 68.1,
+      "uptime_days": 114,
+      "active_connections": 1420
+    },
+    {
+      "node_id": "node-02",
+      "role": "worker-heavy",
+      "cpu_pct": 88.4,
+      "memory_pct": 91.2,
+      "uptime_days": 45,
+      "active_connections": 380
+    },
+    {
+      "node_id": "node-03",
+      "role": "worker-general",
+      "cpu_pct": 55.0,
+      "memory_pct": 74.3,
+      "uptime_days": 82,
+      "active_connections": 890
+    },
+    {
+      "node_id": "node-04",
+      "role": "db-replica",
+      "cpu_pct": 61.2,
+      "memory_pct": 84.7,
+      "uptime_days": 210,
+      "active_connections": 2100
+    },
+    {
+      "node_id": "node-05",
+      "role": "cache-redis",
+      "cpu_pct": 24.1,
+      "memory_pct": 45.0,
+      "uptime_days": 180,
+      "active_connections": 5400
+    }
+  ],
+  "cluster_health": "WARNING_HIGH_WORKER_LOAD"
+}
