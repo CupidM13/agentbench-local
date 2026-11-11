@@ -25,13 +25,30 @@ flowchart LR
 
 ### Ablation Configurations (`src/agent.py`)
 
-All configurations use `temperature=0.2`, `seed=42`, per-call timeout (`90.0s`), `max_steps=8`, and an identical base system prompt logged by SHA-256 prefix (**`ad51ec97de11`** across all 1,800 test trajectories):
+Every configuration runs with the exact hyperparameters listed below and an identical base system prompt logged by SHA-256 prefix (**`ad51ec97de11`** across all 1,800 test trajectories):
 
 | Config | Mechanism Added | Purpose |
 | --- | --- | --- |
 | **`A_baseline`** | Naive dispatch; single try per step; unvalidated arguments sent directly to tool executor | Unhardened baseline |
 | **`B_validate_retry`** | Pre-execution Pydantic schema check against [`CalculatorArgs`](src/tools.py), [`SearchFilesArgs`](src/tools.py), [`ReadFileArgs`](src/tools.py), [`CalendarArgs`](src/tools.py), [`RunPythonArgs`](src/tools.py) + `json_text` format check; returns structured field errors for up to `2` retries/step | Isolate schema-repair gains |
-| **`C_guards`** | **`B`** + duplicate `(tool, args)` loop detection (`repeat == 2` injects nudge), consecutive validation-error cutoff, and forced-answer prompt on step 8 | Bound infinite retry/loop waste |
+| **`C_guards`** | **`B`** + consecutive identical `(tool, args)` loop detection (immediately repeated call injects nudge), consecutive-error cutoff nudge (`consecutive_errors >= 3`), and forced-answer prompt on step `8` (`max_steps`) | Bound infinite retry/loop waste |
+
+### Evaluation & Statistical Parameters
+
+| Parameter | Value / Rule | Source |
+| --- | --- | --- |
+| Inference Endpoint | Ollama OpenAI-compatible API (`http://localhost:11434/v1`) | [`src/llm.py`](src/llm.py) |
+| Sampling Temperature & Seed | `temperature = 0.2`, `seed = 42` | [`src/llm.py`](src/llm.py) |
+| Per-Call HTTP Timeout | `90.0s` | [`src/llm.py`](src/llm.py) |
+| Generation Token Budget | `max_tokens = 1024` (`native`); `max_tokens = 2048` (`json_text`) | [`src/llm.py`](src/llm.py) |
+| Agent Step & Retry Caps | `max_steps = 8` per run; up to `2` retries/step (`B`/`C`) for validation or `json_text` parse errors | [`src/agent.py`](src/agent.py) |
+| Loop & Error Guards (`C`) | Nudge on consecutive identical `(tool, args)`; cutoff nudge at `consecutive_errors >= 3`; forced answer on step `8` | [`src/agent.py`](src/agent.py) |
+| Subprocess Tool Sandbox | `run_python` `timeout_sec = 5.0` inside `data/sandbox/`; `_sanitize_path` blocks traversal | [`src/tools.py`](src/tools.py) |
+| Task Schedule & Cooldown | `dev`: 20 tasks x 1 repeat; `test`: 40 tasks x 3 repeats (`120` runs/model/config); `--cooldown` sleeps between models (`15s` on test) | [`src/run.py`](src/run.py) |
+| Success Uncertainty | Wilson `95%` binomial score interval (`z = 1.95996`) | [`src/report.py`](src/report.py) |
+| Paired Hypothesis Test | Task-level paired bootstrap (`n_resamples = 10,000`, `random_seed = 42`, two-tailed null-centered p-value, `40` test tasks) | [`src/report.py`](src/report.py) |
+| Tool-Call Validity Metric | Share of assistant tool calls passing local Pydantic schema validation and not returning `{VALIDATION_ERROR, TYPE_ERROR, UNKNOWN_TOOL, MISSING_FIELD, INVALID_ACTION}` | [`src/report.py`](src/report.py) |
+| Manual Taxonomy Audit | Deterministic sort on `run_key`, random sample `n = 20`, `random_state = 42` on failed `test` runs | [`src/review_failures.py`](src/review_failures.py) |
 
 ### Dual Tool-Calling Protocol (`src/llm.py`)
 
@@ -72,7 +89,7 @@ All configurations use `temperature=0.2`, `seed=42`, per-call timeout (`90.0s`),
 
 ## Frozen Test Split Results (`1,800` Runs Across 5 Local Models)
 
-Hardware: Apple MacBook Pro M3, 18 GB unified memory (`Darwin arm64`, Ollama `0.24.0`), executed sequentially one model at a time with `15s` cooldowns between configurations.
+Hardware: Apple MacBook Pro M3, 18 GB unified memory (`Darwin arm64`, Ollama `0.24.0`), executed sequentially one model at a time (with thermal cooldowns between sweeps; `--cooldown 15` sleeps between models in multi-model runs).
 
 ### Primary Benchmark Summary (`results/summary_metrics.csv`)
 
@@ -167,14 +184,29 @@ Per-model failure counts are stored in [`results/failure_taxonomy.csv`](results/
 ### Manual Failure Audit (`9/20 = 45.0%` Agreement)
 
 We randomly sampled `20` failed `test` trajectories (`seed=42`, [`src/review_failures.py`](src/review_failures.py)) and audited every trace by hand in [`results/manual_review_audit.csv`](results/manual_review_audit.csv). Auto-vs-manual agreement was **9/20 (45.0%)**, revealing 4 systematic weaknesses in rule-based taxonomy classification:
-- **Path `NOT_FOUND` vs. `format_error` (4/20 disagreements):** `read_file` calls with valid JSON and string types that passed `/data/sandbox/...` or hallucinated `"base_rates.json"` triggered `format_error` in the auto-classifier; manually these are **`wrong_args`**.
+- **Path `NOT_FOUND` vs. `format_error` (4/20 disagreements):** `read_file` calls with valid JSON and string types that passed `/data/sandbox/...` or hallucinated `"base_rates.json"` triggered [`src/taxonomy.py`](src/taxonomy.py) rule 1 because `"json" in obs["error"].lower()` matched `.json` filenames inside `NOT_FOUND` messages; manually these are **`wrong_args`**.
 - **Leaked / Swallowed Tool Calls (3/20 disagreements):** Raw text outputs like `{"name": "round", ...}` (`llama3.2:1b`), `<tool_response>[...]</tool_response>` (`smollm2:1.7b`), and Qwen2.5 blank `""` outputs with `21` completion tokens returned `tool_calls=None` over the wire, mislabeling **`format_error`** as `no_tool_when_needed` or `synthesis_error`.
 - **Direct File Reads vs. `expected_tools` Order (2/20 disagreements):** Calling `read_file("meeting_notes.md")` or `read_file("vendor_contracts.csv")` directly when the filename is in the prompt skipped `search_files`, causing `expected_tools`-based rules to mislabel complete reads as `premature_stop` (`test_12`, true error: `synthesis_error`) or `wrong_tool` (`test_09`, true error: `premature_stop` skipping `calculator`).
 - **Deterministic Unanswerable Grader Sensitivity (2/20 disagreements):** On `test_34`, `llama3.2:latest` inspected `shipping_rates.json` and replied that the return policy was `"not explicitly mentioned... does not specify"`, failing `grade_unanswerable`'s exact substring list (`"not mentioned"` != `"not explicitly mentioned"`) — a **`grader_false_negative`** outside model failure classes; on `test_32`, `llama3.2:latest` guessed a nonexistent path (`wrong_args`) without fabricating PII.
 
 ---
 
-## Dev-Split Diagnostics & Off-Laptop GPU Models
+## Dev Split Provenance & Off-Laptop GPU Models
+
+### Dev Split Results (`300` Runs, 1 Repeat Across 20 Dev Tasks)
+
+Used to iterate on the harness and validate `json_text` retry logic before freezing test numbers (`2,100 total runs = 300 dev + 1,800 test`):
+
+| Model | `A_baseline` | `B_validate_retry` | `C_guards` |
+| --- | --- | --- | --- |
+| `llama3.2:1b` | 6/20 (`30.0%`) | 5/20 (`25.0%`) | 5/20 (`25.0%`) |
+| `llama3.2:latest` | 7/20 (`35.0%`) | 7/20 (`35.0%`) | 7/20 (`35.0%`) |
+| `qwen2.5:1.5b` | 9/20 (`45.0%`) | 10/20 (`50.0%`) | 10/20 (`50.0%`) |
+| `qwen2.5:3b` | 10/20 (`50.0%`) | 11/20 (`55.0%`) | 11/20 (`55.0%`) |
+| `smollm2:1.7b` | 4/20 (`20.0%`) | 4/20 (`20.0%`) | 5/20 (`25.0%`) |
+| **Total (`100` runs/config)** | **36/100 (`36.0%`)** | **37/100 (`37.0%`)** | **38/100 (`38.0%`)** |
+
+### Off-Laptop Diagnostics & Kaggle GPU Models
 
 Heavy models (>= 7B) and slow chain-of-thought models were probed for protocol compatibility and excluded from the 360-run M3 laptop test sweep due to thermal/latency constraints:
 
@@ -191,6 +223,8 @@ Heavy models (>= 7B) and slow chain-of-thought models were probed for protocol c
 python3.13 -m venv .venv
 source .venv/bin/activate
 pip install -e .
+# Or install the minimal runtime dependencies directly:
+# pip install openai pydantic pyyaml pandas matplotlib pytest tqdm
 ```
 
 Minimal dependencies ([`pyproject.toml`](pyproject.toml)): `openai`, `pydantic`, `pyyaml`, `pandas`, `matplotlib`, `pytest`, `tqdm`.

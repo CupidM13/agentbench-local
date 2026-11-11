@@ -10,7 +10,7 @@ import platform
 import sys
 import time
 from pathlib import Path
-from typing import Dict, List, Set
+from typing import Dict, List, Optional, Set
 from tqdm import tqdm
 
 from src.agent import AgentRunner
