@@ -14,6 +14,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
+from src.tools import TOOL_SCHEMAS_PYDANTIC
+
 
 # Set publication style for matplotlib
 plt.style.use("seaborn-v0_8-whitegrid" if "seaborn-v0_8-whitegrid" in plt.style.available else "default")
@@ -84,6 +86,79 @@ def paired_bootstrap(
     }
 
 
+def _count_tool_validity(messages: List[Dict[str, Any]]) -> Tuple[int, int]:
+    """Counts (valid_calls, total_calls) across native and json_text message logs."""
+    total_calls = 0
+    valid_calls = 0
+    invalid_codes = {"VALIDATION_ERROR", "TYPE_ERROR", "UNKNOWN_TOOL", "MISSING_FIELD", "INVALID_ACTION"}
+
+    for idx, msg in enumerate(messages):
+        if msg.get("role") != "assistant":
+            continue
+
+        parsed_calls: List[Tuple[Optional[str], Any]] = []
+        if msg.get("tool_calls"):
+            for tc in msg["tool_calls"]:
+                fn = tc.get("function", {})
+                name = fn.get("name")
+                raw_args = fn.get("arguments", "{}")
+                if isinstance(raw_args, dict):
+                    args = raw_args
+                else:
+                    try:
+                        args = json.loads(raw_args)
+                    except Exception:
+                        args = None
+                parsed_calls.append((name, args))
+        elif isinstance(msg.get("content"), str) and msg["content"].strip().startswith("{"):
+            try:
+                obj = json.loads(msg["content"])
+                if isinstance(obj, dict) and "tool" in obj:
+                    parsed_calls.append((obj.get("tool"), obj.get("args", {})))
+            except Exception:
+                pass
+
+        for name, args in parsed_calls:
+            total_calls += 1
+            if name not in TOOL_SCHEMAS_PYDANTIC or not isinstance(args, dict):
+                continue
+            try:
+                TOOL_SCHEMAS_PYDANTIC[name](**args)
+            except Exception:
+                continue
+
+            obs_err = False
+            if idx + 1 < len(messages):
+                nxt = messages[idx + 1]
+                content = nxt.get("content", "")
+                if nxt.get("role") == "tool" or (nxt.get("role") == "user" and content.startswith("Observation: ")):
+                    payload = content[len("Observation: "):] if content.startswith("Observation: ") else content
+                    try:
+                        obs = json.loads(payload)
+                        if isinstance(obs, dict) and obs.get("code") in invalid_codes:
+                            obs_err = True
+                    except Exception:
+                        pass
+            if not obs_err:
+                valid_calls += 1
+
+    return valid_calls, total_calls
+
+
+def _df_to_markdown(df: pd.DataFrame) -> str:
+    """Renders a DataFrame as a GitHub-flavored Markdown table without requiring tabulate."""
+    if df.empty:
+        return ""
+    cols = [str(c) for c in df.columns]
+    header = "| " + " | ".join(cols) + " |"
+    sep = "| " + " | ".join(["---"] * len(cols)) + " |"
+    lines = [header, sep]
+    for _, row in df.iterrows():
+        vals = [str(row[c]) for c in df.columns]
+        lines.append("| " + " | ".join(vals) + " |")
+    return "\n".join(lines)
+
+
 def load_all_runs(runs_dir: str = "runs") -> pd.DataFrame:
     """Reads all JSONL trajectory files from runs directory into a DataFrame."""
     records: List[Dict[str, Any]] = []
@@ -99,6 +174,7 @@ def load_all_runs(runs_dir: str = "runs") -> pd.DataFrame:
                     passed = rec.get("grader_result", {}).get("passed", False)
                     score = rec.get("grader_result", {}).get("score", 1.0 if passed else 0.0)
                     failure_label = rec.get("failure_label")
+                    valid_tc, total_tc = _count_tool_validity(rec.get("messages", []))
                     records.append({
                         "run_key": rec.get("run_key"),
                         "model": rec.get("model"),
@@ -111,6 +187,8 @@ def load_all_runs(runs_dir: str = "runs") -> pd.DataFrame:
                         "passed": bool(passed),
                         "score": float(score),
                         "steps_used": rec.get("steps_used", 0),
+                        "tool_calls_valid": valid_tc,
+                        "tool_calls_total": total_tc,
                         "total_latency_sec": rec.get("total_latency_sec", 0.0),
                         "prompt_tokens": rec.get("prompt_tokens", 0),
                         "completion_tokens": rec.get("completion_tokens", 0),
@@ -124,7 +202,7 @@ def load_all_runs(runs_dir: str = "runs") -> pd.DataFrame:
         return pd.DataFrame()
 
     df = pd.DataFrame(records)
-    df.drop_duplicates(subset=["run_key"], keep="last", inplace=True)
+    df = df.drop_duplicates(subset=["run_key"], keep="last")
     return df
 
 
@@ -300,6 +378,9 @@ def generate_summary_tables(df: pd.DataFrame, out_dir: Path) -> str:
             avg_steps = sub["steps_used"].mean()
             avg_lat = sub["total_latency_sec"].mean()
             avg_tok = sub["total_tokens"].mean()
+            tc_valid = int(sub["tool_calls_valid"].sum())
+            tc_total = int(sub["tool_calls_total"].sum())
+            tc_rate_str = f"{(tc_valid / tc_total) * 100:.1f}%" if tc_total > 0 else "N/A"
             rows.append({
                 "Model": m,
                 "Config": c,
@@ -307,6 +388,7 @@ def generate_summary_tables(df: pd.DataFrame, out_dir: Path) -> str:
                 "Passed": passed,
                 "Success Rate": f"{p * 100:.1f}%",
                 "95% CI (Wilson)": f"[{lo * 100:.1f}%, {hi * 100:.1f}%]",
+                "Tool Validity": tc_rate_str,
                 "Avg Steps": f"{avg_steps:.2f}",
                 "Avg Latency (s)": f"{avg_lat:.2f}",
                 "Avg Tokens": f"{avg_tok:.0f}",
@@ -359,13 +441,19 @@ def generate_summary_tables(df: pd.DataFrame, out_dir: Path) -> str:
     ).unstack()
     cat_pivot.to_csv(out_dir / "category_metrics.csv")
 
+    # Failure taxonomy summary table
+    fail_only = test_df[~test_df["passed"]]
+    if not fail_only.empty:
+        tax_pivot = pd.crosstab([fail_only["model"], fail_only["config"]], fail_only["failure_label"])
+        tax_pivot.to_csv(out_dir / "failure_taxonomy.csv")
+
     # Format Markdown Output
     clean_summary = summary_df.drop(columns=["_raw_p", "_raw_lo", "_raw_hi"])
     md_output = "### Evaluation Results: Primary Benchmark Summary\n\n"
-    md_output += clean_summary.to_markdown(index=False)
+    md_output += _df_to_markdown(clean_summary)
     md_output += "\n\n### Paired-Bootstrap Hypothesis Tests (10,000 resamples)\n\n"
     if not boot_df.empty:
-        md_output += boot_df.to_markdown(index=False)
+        md_output += _df_to_markdown(boot_df)
     else:
         md_output += "_No comparisons available yet._"
 

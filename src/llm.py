@@ -26,6 +26,7 @@ class LLMResponse:
     thought: Optional[str] = None
     tool_calls: List[ToolCallAction] = field(default_factory=list)
     final_answer: Optional[str] = None
+    parse_error: Optional[str] = None
     prompt_tokens: int = 0
     completion_tokens: int = 0
     latency_sec: float = 0.0
@@ -217,6 +218,10 @@ class LLMClient:
             msg = choice.message
             raw_content = msg.content or ""
             cleaned_content, thought = strip_think_blocks(raw_content)
+            if thought is None:
+                reasoning_extra = getattr(msg, "reasoning", None) or (msg.model_extra or {}).get("reasoning")
+                if reasoning_extra:
+                    thought = str(reasoning_extra).strip()
 
             if msg.tool_calls:
                 for tc in msg.tool_calls:
@@ -251,19 +256,26 @@ class LLMClient:
             )
 
         else:
-            # json_text protocol
+            # json_text protocol (allow larger budget if reasoning models emit <think> tokens)
+            effective_max_tokens = max(max_tokens, 2048)
             response = self.client.chat.completions.create(
                 model=model,
                 messages=messages,
                 temperature=self.temperature,
                 seed=self.seed,
-                max_tokens=max_tokens,
+                max_tokens=effective_max_tokens,
             )
             latency = time.time() - start_time
             choice = response.choices[0]
-            raw_content = choice.message.content or ""
+            msg = choice.message
+            raw_content = msg.content or ""
             cleaned_content, thought = strip_think_blocks(raw_content)
+            if thought is None:
+                reasoning_extra = getattr(msg, "reasoning", None) or (msg.model_extra or {}).get("reasoning")
+                if reasoning_extra:
+                    thought = str(reasoning_extra).strip()
 
+            parse_error: Optional[str] = None
             parsed_json = extract_json_object(cleaned_content)
             if parsed_json:
                 if "tool" in parsed_json:
@@ -281,10 +293,12 @@ class LLMClient:
                     ans = parsed_json["final_answer"]
                     final_answer = ans if isinstance(ans, str) else str(ans)
                 else:
-                    # Generic JSON output without tool or final_answer
+                    # JSON output missing expected 'tool' or 'final_answer' schema keys
+                    parse_error = "JSON object must contain either 'tool' and 'args', or 'final_answer'."
                     final_answer = cleaned_content
             else:
-                # No JSON found: treat whole text as final answer
+                # No valid JSON object found under strict json_text protocol
+                parse_error = "Output was not a valid JSON object matching {'tool': ..., 'args': ...} or {'final_answer': ...}."
                 final_answer = cleaned_content
 
             prompt_tokens = response.usage.prompt_tokens if response.usage else 0
@@ -295,6 +309,7 @@ class LLMClient:
                 thought=thought,
                 tool_calls=tool_calls,
                 final_answer=final_answer,
+                parse_error=parse_error,
                 prompt_tokens=prompt_tokens,
                 completion_tokens=comp_tokens,
                 latency_sec=latency,

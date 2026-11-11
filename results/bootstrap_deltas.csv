@@ -1,0 +1,9 @@
+Model,Comparison,Delta (% points),95% CI (Bootstrap),p-value,Significant
+llama3.2:1b,A vs B (Validation),+0.0%,"[-7.5%, +7.5%]",1.0000,No
+llama3.2:1b,A vs C (Hardened),+0.0%,"[-7.5%, +7.5%]",1.0000,No
+llama3.2:latest,A vs B (Validation),+2.5%,"[-5.0%, +12.5%]",0.7617,No
+llama3.2:latest,A vs C (Hardened),+2.5%,"[-5.0%, +12.5%]",0.7617,No
+qwen2.5:1.5b,A vs B (Validation),+0.0%,"[+0.0%, +0.0%]",1.0000,No
+qwen2.5:1.5b,A vs C (Hardened),+0.0%,"[+0.0%, +0.0%]",1.0000,No
+qwen2.5:3b,A vs B (Validation),-2.5%,"[-7.5%, +0.0%]",0.6267,No
+qwen2.5:3b,A vs C (Hardened),-2.5%,"[-7.5%, +0.0%]",0.6267,No

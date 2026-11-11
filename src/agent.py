@@ -76,6 +76,7 @@ class AgentTrajectory:
     failure_label: Optional[str]
     system_prompt_hash: str
     model_metadata: Dict[str, Any]
+    thoughts: List[str] = field(default_factory=list)
 
     def to_dict(self) -> Dict[str, Any]:
         return asdict(self)
@@ -145,6 +146,7 @@ class AgentRunner:
         all_tool_calls: List[Dict[str, Any]] = []
         all_tool_observations: List[Dict[str, Any]] = []
         raw_responses: List[str] = []
+        thoughts: List[str] = []
         final_answer = ""
         timed_out = False
         start_wall_time = time.time()
@@ -182,6 +184,40 @@ class AgentRunner:
             total_completion_tokens += resp.completion_tokens
             if resp.content:
                 raw_responses.append(resp.content)
+            if resp.thought:
+                thoughts.append(resp.thought)
+
+            # Layer B & C: Retry on unparseable/malformed JSON in json_text mode
+            if resp.parse_error and config in ("B_validate_retry", "C_guards", "D_selfcheck"):
+                for _ in range(2):
+                    retry_prompt = (
+                        f"Format error: {resp.parse_error} "
+                        f"Reply ONLY with valid JSON: {{\"tool\": \"...\", \"args\": {{...}}}} or {{\"final_answer\": \"...\"}}."
+                    )
+                    retry_messages = list(messages)
+                    if resp.content:
+                        retry_messages.append({"role": "assistant", "content": resp.content})
+                    retry_messages.append({"role": "user", "content": retry_prompt})
+                    try:
+                        retry_resp = self.client.chat(
+                            model=model,
+                            messages=retry_messages,
+                            tools_schema=tools_schema,
+                            protocol=active_protocol,
+                        )
+                        step_latencies.append(retry_resp.latency_sec)
+                        total_prompt_tokens += retry_resp.prompt_tokens
+                        total_completion_tokens += retry_resp.completion_tokens
+                        if retry_resp.thought:
+                            thoughts.append(retry_resp.thought)
+                        resp = retry_resp
+                        if not resp.parse_error:
+                            break
+                    except Exception:
+                        break
+
+            if resp.parse_error:
+                all_tool_observations.append({"error": resp.parse_error, "code": "UNPARSEABLE_JSON"})
 
             # If model provided a final answer and no tool calls, terminate loop
             if resp.final_answer and not resp.tool_calls:
@@ -370,4 +406,5 @@ class AgentRunner:
             failure_label=failure_label,
             system_prompt_hash=prompt_hash,
             model_metadata=model_metadata or {},
+            thoughts=thoughts,
         )

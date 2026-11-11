@@ -1,0 +1,10 @@
+,success_rate,success_rate,success_rate,count,count,count
+config,A_baseline,B_validate_retry,C_guards,A_baseline,B_validate_retry,C_guards
+category,,,,,,
+arg_precision,54.2%,54.2%,54.2%,72,72,72
+independent_multi,25.0%,25.0%,25.0%,72,72,72
+multi_step,10.7%,14.3%,14.3%,84,84,84
+no_tool_needed,50.0%,50.0%,50.0%,60,60,60
+single_tool,70.8%,75.0%,75.0%,72,72,72
+stateful,50.0%,45.0%,45.0%,60,60,60
+unanswerable,30.0%,25.0%,25.0%,60,60,60
