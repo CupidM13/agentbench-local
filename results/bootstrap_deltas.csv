@@ -7,3 +7,5 @@ qwen2.5:1.5b,A vs B (Validation),+0.0%,"[+0.0%, +0.0%]",1.0000,No
 qwen2.5:1.5b,A vs C (Hardened),+0.0%,"[+0.0%, +0.0%]",1.0000,No
 qwen2.5:3b,A vs B (Validation),-2.5%,"[-7.5%, +0.0%]",0.6267,No
 qwen2.5:3b,A vs C (Hardened),-2.5%,"[-7.5%, +0.0%]",0.6267,No
+smollm2:1.7b,A vs B (Validation),+0.0%,"[+0.0%, +0.0%]",1.0000,No
+smollm2:1.7b,A vs C (Hardened),+2.5%,"[+0.0%, +7.5%]",0.6242,No

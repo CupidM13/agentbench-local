@@ -257,17 +257,17 @@ def generate_plots(df: pd.DataFrame, out_dir: Path):
             alpha=0.9,
         )
 
-        # Label percentages on bars
-        for rect, rate in zip(rects, rates):
+        # Label percentages cleanly above Wilson CI error-bar upper cap
+        for rect, rate, hi_err in zip(rects, rates, err_high):
             if rate > 0:
                 ax.annotate(
                     f"{rate:.1f}%",
-                    xy=(rect.get_x() + rect.get_width() / 2, rect.get_height()),
+                    xy=(rect.get_x() + rect.get_width() / 2, rate + hi_err),
                     xytext=(0, 3),
                     textcoords="offset points",
                     ha="center",
                     va="bottom",
-                    fontsize=8,
+                    fontsize=7.5,
                     fontweight="bold",
                 )
 
@@ -289,6 +289,7 @@ def generate_plots(df: pd.DataFrame, out_dir: Path):
     if not fail_df.empty:
         pivot = pd.crosstab(fail_df["config"], fail_df["failure_label"], normalize="index") * 100
         pivot.plot(kind="bar", stacked=True, ax=ax, colormap="tab20", edgecolor="white")
+        ax.set_xlabel("Configuration")
         ax.set_ylabel("Share of Failures (%)")
         ax.set_title("Failure Taxonomy Distribution (Baseline vs Hardened)")
         ax.set_xticklabels(ax.get_xticklabels(), rotation=0)
@@ -316,37 +317,85 @@ def generate_plots(df: pd.DataFrame, out_dir: Path):
     # -------------------------------------------------------------
     # Plot 4: Success vs Average Latency per Model
     # -------------------------------------------------------------
-    fig, ax = plt.subplots(figsize=(8, 5))
+    fig, ax = plt.subplots(figsize=(9, 5.5))
     grouped = test_df.groupby(["model", "config"]).agg(
         success_pct=("passed", lambda s: s.mean() * 100),
         avg_latency=("total_latency_sec", "mean"),
     ).reset_index()
 
+    # Connect baseline -> hardened points per model to show shift
+    for m in models:
+        m_df = grouped[grouped["model"] == m].set_index("config")
+        if "A_baseline" in m_df.index and "C_guards" in m_df.index:
+            x0, y0 = m_df.loc["A_baseline", "avg_latency"], m_df.loc["A_baseline", "success_pct"]
+            x1, y1 = m_df.loc["C_guards", "avg_latency"], m_df.loc["C_guards", "success_pct"]
+            ax.annotate(
+                "",
+                xy=(x1, y1),
+                xytext=(x0, y0),
+                arrowprops=dict(arrowstyle="->", color="#718096", lw=1.2, ls="--", alpha=0.7),
+                zorder=1,
+            )
+
+    markers = {"A_baseline": "o", "B_validate_retry": "s", "C_guards": "^"}
     for cfg in configs:
         sub = grouped[grouped["config"] == cfg]
         ax.scatter(
             sub["avg_latency"],
             sub["success_pct"],
-            s=120,
+            s=110,
+            marker=markers.get(cfg, "o"),
             label=cfg,
             color=colors.get(cfg, "#718096"),
             alpha=0.9,
             edgecolors="black",
+            zorder=3,
         )
-        for _, row in sub.iterrows():
-            ax.annotate(
-                f"{row['model'].split(':')[0]}",
-                xy=(row["avg_latency"], row["success_pct"]),
-                xytext=(5, 4),
-                textcoords="offset points",
-                fontsize=8,
-            )
+
+    # Label each model cleanly once using C_guards anchor with custom non-overlapping offsets
+    label_offsets = {
+        "qwen2.5:1.5b": (-4, 14),
+        "llama3.2:1b": (8, -16),
+        "qwen2.5:3b": (38, 2),
+        "llama3.2:latest": (-8, 14),
+        "smollm2:1.7b": (0, 14),
+    }
+    c_sub = grouped[grouped["config"] == "C_guards"] if "C_guards" in configs else grouped
+    for _, row in c_sub.iterrows():
+        dx, dy = label_offsets.get(row["model"], (6, 8))
+        ax.annotate(
+            row["model"],
+            xy=(row["avg_latency"], row["success_pct"]),
+            xytext=(dx, dy),
+            textcoords="offset points",
+            ha="center",
+            fontsize=8.5,
+            fontweight="bold",
+            bbox=dict(boxstyle="round,pad=0.2", fc="white", ec="#CBD5E0", alpha=0.85),
+            zorder=4,
+        )
+    # Also mark A/B cluster for smollm2:1.7b since C_guards shifted latency sharply left
+    smol_a = grouped[(grouped["model"] == "smollm2:1.7b") & (grouped["config"] == "A_baseline")]
+    if not smol_a.empty:
+        r0 = smol_a.iloc[0]
+        ax.annotate(
+            "smollm2:1.7b (A/B)",
+            xy=(r0["avg_latency"], r0["success_pct"]),
+            xytext=(-18, 12),
+            textcoords="offset points",
+            ha="center",
+            fontsize=8,
+            color="#4A5568",
+            bbox=dict(boxstyle="round,pad=0.2", fc="white", ec="#CBD5E0", alpha=0.85),
+            zorder=4,
+        )
 
     ax.set_xlabel("Average Latency per Task (seconds)")
     ax.set_ylabel("Success Rate (%)")
-    ax.set_title("Efficiency Frontier: Task Success Rate vs Latency")
-    ax.set_ylim(0, 105)
-    ax.legend(title="Config")
+    ax.set_title("Efficiency Frontier: Task Success Rate vs Latency (Arrows: A -> C)")
+    ax.set_xlim(left=0.8, right=max(grouped["avg_latency"].max() + 0.5, 5.2))
+    ax.set_ylim(0, 78)
+    ax.legend(title="Configuration", loc="upper right")
     plt.tight_layout()
     plt.savefig(out_dir / "chart4_success_vs_latency.png", dpi=300)
     plt.close()
