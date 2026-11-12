@@ -296,11 +296,3 @@ agentbench-local/
 │   └── kaggle_run.ipynb      # GPU runner for 7B-14B models (qwen2.5:7b, gemma4:e4b, qwen3.5:9b, deepseek-r1:14b)
 └── tests/                    # 27 unit tests covering tools, graders, tasks, agent & protocols
 ```
-
----
-
-## Resume / CV Summary Bullets
-
-- **Built `AgentBench-Local`**, a framework-free Python reliability benchmark for small local LLMs (<= 3.2B) featuring 4 deterministic Pydantic-validated tools, 60 auto-graded tasks (`20` dev / `40` frozen test), dual `native`/`json_text` tool protocols, and resumable JSONL trajectory logging across **2,100 runs**.
-- **Engineered layered runtime hardening** (pre-execution Pydantic retry feedback + duplicate-call/step guards) and evaluated via 10,000-resample paired bootstrap: boosted `llama3.2:latest` tool-call validity **68.3% -> 97.6%** (`-87.5%` schema errors) and cut `smollm2:1.7b` tokens **-45.8%** and latency **-33.8%**, while proving end-to-end task success deltas (**35.5% -> 36.0%** overall; peak `+2.5 pp`, `p >= 0.624`) remained statistically non-significant due to multi-step planning and unanswerable-abstention limits.
-- **Categorized 1,158 test failures into a 12-class taxonomy** and performed a manual audit on 20 sampled trajectories (`45.0%` auto agreement), uncovering `NOT_FOUND`-to-`format_error` misattribution, Ollama `<tool_call>` silent-drop parsing failures, and rigid `expected_tools` penalization.
